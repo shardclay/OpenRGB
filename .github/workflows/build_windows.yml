@@ -1,0 +1,40 @@
+name: Build OpenRGB Windows x64
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build_win64:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          arch: 'win64_msvc2019_64'
+
+      - name: Setup MSVC and Build
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          qmake OpenRGB.pro
+          nmake release
+
+      - name: Package Build
+        shell: cmd
+        run: |
+          windeployqt --release release\OpenRGB.exe
+          copy dependencies\hidapi-win\x64\hidapi.dll release\
+          copy dependencies\PawnIO\PawnIOLib.dll release\
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenRGB-Windows-64bit-RX9070
+          path: release/
